@@ -1,4 +1,4 @@
-name: Build Noon
+name: como se dice im tryna verity
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       - name: Extract source zip
         run: |
           mkdir -p build-src
-          unzip -q noon-source.zip -d build-src
+          unzip -q poco-source.zip -d build-src
           if [ -f build-src/build.gradle ]; then
             echo "SRC=build-src" >> "$GITHUB_ENV"
           else
@@ -43,7 +43,7 @@ jobs:
       - name: Collect jar
         run: |
           mkdir -p out
-          cp "$SRC"/build/libs/noon-*.jar out/
+          cp "$SRC"/build/libs/poco-*.jar out/
           rm -f out/*-sources.jar
           ls -l out
 
