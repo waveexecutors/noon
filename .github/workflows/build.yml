@@ -23,14 +23,38 @@ jobs:
         with:
           gradle-version: 9.2.0
 
+      # The project may sit in the repo root, in a subfolder, or be uploaded as a .zip - find it either way.
+      - name: Locate project
+        run: |
+          set -e
+          if [ ! -f build.gradle ] && [ -z "$(find . -name build.gradle -not -path './.git/*' -print -quit)" ]; then
+            ZIP="$(find . -maxdepth 2 -name '*.zip' -not -path './.git/*' | head -n 1)"
+            if [ -n "$ZIP" ]; then
+              echo "Unpacking $ZIP"
+              mkdir -p build-src
+              unzip -q -o "$ZIP" -d build-src
+            fi
+          fi
+          GRADLE_FILE="$(find . -name build.gradle -not -path './.git/*' -not -path '*/build/*' | awk '{ print length, $0 }' | sort -n | head -n 1 | cut -d' ' -f2-)"
+          if [ -z "$GRADLE_FILE" ]; then
+            echo "No build.gradle found anywhere in the repository"
+            find . -maxdepth 3 -not -path './.git/*' | head -50
+            exit 1
+          fi
+          SRC="$(dirname "$GRADLE_FILE")"
+          echo "Project directory: $SRC"
+          echo "SRC=$SRC" >> "$GITHUB_ENV"
+
       - name: Build
-        run: gradle build --no-daemon
+        run: |
+          cd "$SRC"
+          gradle build --no-daemon
 
       - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
           name: poco
           path: |
-            build/libs/*.jar
-            !build/libs/*-sources.jar
+            ${{ env.SRC }}/build/libs/*.jar
+            !${{ env.SRC }}/build/libs/*-sources.jar
           if-no-files-found: error
